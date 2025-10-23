@@ -1,0 +1,12 @@
+# Installed packages
+/node_modules
+
+### Editors
+/.idea
+/.vscode
+
+# Build output
+/dist
+
+# Dotenv
+*.env
