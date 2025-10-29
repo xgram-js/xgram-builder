@@ -18,7 +18,7 @@ export function assertExportsToMap(map: ExportMaps, exports: any, file: string) 
             new InvalidProjectStructureError(
                 file,
                 `to contain export key ${chalk.green(key)} with type ${chalk.green(map[key])}`,
-                typeof exports[key] == "undefined" ? null : exports[key]
+                typeof exports[key] == "undefined" ? null : typeof exports[key]
             )
         );
     });
