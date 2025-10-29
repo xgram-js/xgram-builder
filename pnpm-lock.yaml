@@ -53,6 +53,9 @@ importers:
             "@types/node":
                 specifier: ^24.9.1
                 version: 24.9.1
+            dts-minify:
+                specifier: ^0.3.3
+                version: 0.3.3
             eslint:
                 specifier: ^9.38.0
                 version: 9.38.0(jiti@2.6.1)
@@ -1341,6 +1344,12 @@ packages:
                 integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==
             }
         engines: { node: ">=12" }
+
+    dts-minify@0.3.3:
+        resolution:
+            {
+                integrity: sha512-REaaCkkcpfG+I3gVwU58xco6NH7ZOE7yCo780L008pONbgHvv6ukKZWxiC2V43JCN36lx4tE8qHctrwWdWZYnQ==
+            }
 
     eastasianwidth@0.2.0:
         resolution:
@@ -3802,6 +3811,8 @@ snapshots:
             is-obj: 2.0.0
 
     dotenv@17.2.3: {}
+
+    dts-minify@0.3.3: {}
 
     eastasianwidth@0.2.0: {}
 
