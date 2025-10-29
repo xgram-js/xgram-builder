@@ -7,7 +7,8 @@
     "format": "prettier . --write",
     "lint": "eslint . --fix",
     "build+format": "npm run format && npm run build",
-    "build+format+lint": "npm run format && npm run lint && npm run build"
+    "build+format+lint": "npm run format && npm run lint && npm run build",
+    "knip": "knip"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
@@ -23,6 +24,7 @@
     "eslint": "^9.38.0",
     "husky": "^9.1.7",
     "jiti": "^2.6.1",
+    "knip": "^5.66.4",
     "lint-staged": "^16.2.6",
     "prettier": "^3.6.2",
     "prettier-plugin-unused-imports-configurable": "^1.15.0",
