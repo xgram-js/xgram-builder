@@ -29,7 +29,9 @@ function generateRollupConfig(project: Project): RollupOptions {
         },
         plugins: [
             typescriptPlugin({
-                noEmitOnError: true
+                noEmitOnError: true,
+                include: `**/*.ts`,
+                tsconfig: path.join(project.rootDir, "tsconfig.json")
             }),
             terserPlugin({
                 keep_classnames: /^.*Error$/
