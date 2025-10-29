@@ -74,8 +74,8 @@ export async function buildProduction(cwd?: string) {
             },
             {
                 title: "Postprocessing bundle",
-                task: async (ctx, task) => {
-                    return task.newListr<RootTaskContext>([
+                task: async (ctx, task) =>
+                    task.newListr<RootTaskContext>([
                         {
                             title: "Validating export maps",
                             task: async (ctx, task) =>
@@ -100,8 +100,7 @@ export async function buildProduction(cwd?: string) {
                                     }
                                 )
                         }
-                    ]);
-                }
+                    ])
             }
         ],
         {
