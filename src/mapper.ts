@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs";
 import chalk from "chalk";
 import path from "node:path";
-import { Project } from "./types";
+import { Project, ProjectCommand } from "./types";
 
 export class InvalidProjectStructureError extends Error {
     public constructor(expected: string, found?: string) {
@@ -10,9 +10,13 @@ export class InvalidProjectStructureError extends Error {
     }
 }
 
-function handleCommandsDir(commandsDir: string) {
+function handleCommandsDir(commandsDir: string): ProjectCommand[] {
     const commandsDirList = readdirSync(commandsDir);
-    return commandsDirList.filter(v => v.endsWith(".ts")).map(v => path.join(commandsDir, v));
+    const commandsFiles = commandsDirList.filter(v => v.endsWith(".ts"));
+
+    return commandsFiles.map(v => {
+        return { filePath: path.join(commandsDir, v), projectRelativeFilePath: `src/commands/${v}` };
+    });
 }
 
 export default function mapProjectStructure(rootDir: string) {
