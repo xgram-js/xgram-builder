@@ -10,3 +10,13 @@ export interface Project {
     menus: string[];
     services: string[];
 }
+
+export type PrimitiveTypeLiteral =
+    | "string"
+    | "number"
+    | "function"
+    | "object"
+    | "boolean"
+    | "bigint"
+    | "symbol"
+    | "undefined";
