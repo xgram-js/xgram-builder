@@ -1,4 +1,5 @@
 export interface ProjectCommand {
+    name: string;
     filePath: string;
     projectRelativeFilePath: string;
 }

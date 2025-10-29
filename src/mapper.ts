@@ -51,7 +51,11 @@ function handleCommandsDir(commandsDir: string): ProjectCommand[] {
     const commandsFiles = commandsDirList.filter(v => v.endsWith(".ts"));
 
     return commandsFiles.map(v => {
-        return { filePath: path.join(commandsDir, v), projectRelativeFilePath: `src/commands/${v}` };
+        return {
+            filePath: path.join(commandsDir, v),
+            projectRelativeFilePath: `src/commands/${v}`,
+            name: v.split(".").slice(0, -1).join(".")
+        };
     });
 }
 

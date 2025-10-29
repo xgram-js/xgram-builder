@@ -23,8 +23,11 @@ export default {
                 prefix: z.string().min(1).optional()
             })
         }
-    }
-} as Record<string, ExportMaps>;
+    },
+    event: {},
+    menu: {},
+    service: {}
+} as Record<"command" | "event" | "menu" | "service", ExportMaps>;
 
 export function assertExportsToMap(map: ExportMaps, exports: any, file: string) {
     Object.keys(map).forEach(key => {

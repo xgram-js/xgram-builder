@@ -9,10 +9,14 @@ import path from "node:path";
 import { Project } from "./types";
 import exportMaps, { assertExportsToMap } from "./exportMaps";
 import chalk from "chalk";
+import { CommandDeclaration, CommandConfig } from "@xgram/core";
 const exec = promisify(execCb);
 
 interface RootTaskContext {
     project: Project;
+    collectedDeclarations: {
+        commands: CommandDeclaration[];
+    };
 }
 
 function generateRollupConfig(project: Project): RollupOptions {
@@ -101,6 +105,26 @@ export async function buildProduction(cwd?: string) {
                                         concurrent: true
                                     }
                                 )
+                        },
+                        {
+                            title: "Declaring entities",
+                            task: async ctx => {
+                                ctx.collectedDeclarations = {
+                                    commands: []
+                                };
+                                for (let i = 0; i < ctx.project.commands.length; i++) {
+                                    const command = ctx.project.commands[i];
+                                    const commandFileExports = await import(
+                                        `file://${path.join(ctx.project.rootDir, ".xgram", "dist", `command-${i}.js`)}`
+                                    );
+                                    const config: CommandConfig = commandFileExports.commandConfig ?? {};
+                                    ctx.collectedDeclarations.commands.push({
+                                        trigger: command.name,
+                                        prefix: config.prefix ?? "/",
+                                        handlerFunction: commandFileExports.default
+                                    });
+                                }
+                            }
                         }
                     ])
             }
