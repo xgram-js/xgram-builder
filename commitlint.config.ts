@@ -9,7 +9,8 @@ const Configuration: UserConfig = {
             "always",
             ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test"]
         ],
-        "body-max-line-length": [2, "always", Infinity]
+        "body-max-line-length": [2, "always", Infinity],
+        "header-max-length": [2, "always", Infinity]
     }
 };
 
