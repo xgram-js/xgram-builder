@@ -48,6 +48,7 @@
     "prettier-plugin-unused-imports-configurable": "^1.15.0",
     "rimraf": "^6.0.1",
     "rollup": "^4.52.5",
+    "rollup-plugin-dts": "^6.2.3",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2"
