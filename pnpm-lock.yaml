@@ -25,6 +25,9 @@ importers:
             rollup:
                 specifier: ^4.52.5
                 version: 4.52.5
+            zod:
+                specifier: ^4.1.12
+                version: 4.1.12
         devDependencies:
             "@commitlint/cli":
                 specifier: ^20.1.0

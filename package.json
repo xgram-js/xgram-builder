@@ -48,7 +48,8 @@
     "chokidar": "^4.0.3",
     "dotenv": "^17.2.3",
     "listr2": "^9.0.5",
-    "rollup": "^4.52.5"
+    "rollup": "^4.52.5",
+    "zod": "^4.1.12"
   },
   "packageManager": "pnpm@10.15.0"
 }
