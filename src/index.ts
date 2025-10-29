@@ -1,19 +1,15 @@
 import mapProjectStructure from "./mapper";
-import { Listr, ListrDefaultRendererLogLevels, Spinner } from "listr2";
+import { Listr, ListrDefaultRendererLogLevels, ListrTask } from "listr2";
 import { exec as execCb, ExecException } from "node:child_process";
 import { promisify } from "node:util";
-import chalk from "chalk";
 import { OutputOptions, rollup, RollupOptions } from "rollup";
 import typescriptPlugin from "@rollup/plugin-typescript";
 import terserPlugin from "@rollup/plugin-terser";
 import path from "node:path";
 import { Project } from "./types";
-
+import exportMaps, { assertExportsToMap } from "./exportMaps";
+import chalk from "chalk";
 const exec = promisify(execCb);
-
-class ForceUnicodeSpinner extends Spinner {
-    protected override readonly spinner: string[] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-}
 
 interface RootTaskContext {
     project: Project;
@@ -22,7 +18,7 @@ interface RootTaskContext {
 function generateRollupConfig(project: Project): RollupOptions {
     return {
         input: {
-            ...Object.fromEntries(project.commands.map((v, i) => [`command-${i}`, v])),
+            ...Object.fromEntries(project.commands.map((v, i) => [`command-${i}`, v.filePath])),
             ...Object.fromEntries(project.events.map((v, i) => [`event-${i}`, v])),
             ...Object.fromEntries(project.menus.map((v, i) => [`menu-${i}`, v])),
             ...Object.fromEntries(project.services.map((v, i) => [`service-${i}`, v]))
@@ -49,7 +45,7 @@ export async function buildProduction(cwd?: string) {
         [
             {
                 title: "Mapping project structure",
-                task: ctx => {
+                task: async ctx => {
                     ctx.project = mapProjectStructure(cwd);
                 }
             },
@@ -61,7 +57,7 @@ export async function buildProduction(cwd?: string) {
                         await exec("npm run lint", { cwd });
                         state = 1;
                         await exec("tsc --noEmit", { cwd });
-                    } catch (error: any) {
+                    } catch (error) {
                         console.error((error as ExecException).stdout);
                         throw new Error(state == 0 ? "Linting failed" : "Type validation failed");
                     }
@@ -77,9 +73,34 @@ export async function buildProduction(cwd?: string) {
                 }
             },
             {
-                title: "Hooking in",
-                task: async () => {
-                    await new Promise<void>(resolve => setTimeout(resolve, 2000));
+                title: "Postprocessing bundle",
+                task: async (ctx, task) => {
+                    return task.newListr<RootTaskContext>([
+                        {
+                            title: "Validating export maps",
+                            task: async (ctx, task) =>
+                                task.newListr<RootTaskContext>(
+                                    ctx.project.commands.map((command, i) => {
+                                        return {
+                                            title: command.projectRelativeFilePath,
+                                            task: async ctx => {
+                                                const commandFileExports = await import(
+                                                    `file://${path.join(ctx.project.rootDir, ".xgram", "dist", `command-${i}.js`)}`
+                                                );
+                                                assertExportsToMap(
+                                                    exportMaps.command,
+                                                    commandFileExports,
+                                                    command.projectRelativeFilePath
+                                                );
+                                            }
+                                        } as ListrTask<RootTaskContext>;
+                                    }),
+                                    {
+                                        concurrent: true
+                                    }
+                                )
+                        }
+                    ]);
                 }
             }
         ],
@@ -88,15 +109,15 @@ export async function buildProduction(cwd?: string) {
                 icon: {
                     [ListrDefaultRendererLogLevels.COMPLETED]: "V",
                     [ListrDefaultRendererLogLevels.FAILED]: "X"
-                },
-                spinner: new ForceUnicodeSpinner()
-            }
+                }
+            },
+            forceUnicode: true
         }
     );
     console.log(`${chalk.bold.green("Creating X-Gram.js production build\n")}`);
     try {
         await rootTask.run();
-    } catch (e) {
+    } catch {
         process.exit(1);
     }
 }
