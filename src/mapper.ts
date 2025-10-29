@@ -4,9 +4,23 @@ import path from "node:path";
 import { Project, ProjectCommand } from "./types";
 
 export class InvalidProjectStructureError extends Error {
-    public constructor(expected: string, found?: string) {
-        if (found) super(`Expected ${chalk.green(expected)}, but found ${chalk.red(found)}`);
-        else super(`Expected ${chalk.green(expected)}, but nothing found`);
+    // TODO: replace overloads with `type: ErrorTypeEnum` argument
+
+    public constructor(expected: string, found?: string);
+    public constructor(file: string, expected: string, found: string | null);
+
+    public constructor(a: string, b: string, c?: string | null) {
+        if (a && !b && !c) {
+            super(`Expected ${chalk.green(a)}, but nothing found`);
+        } else if (a && b && c === undefined) {
+            super(`Expected ${chalk.green(a)}, but found ${chalk.red(b)}`);
+        } else {
+            if (c == null) {
+                super(`File ${a} expected ${b}, but nothing found`);
+            } else {
+                super(`File ${a} expected ${b}, but found ${chalk.red(c)}`);
+            }
+        }
     }
 }
 
