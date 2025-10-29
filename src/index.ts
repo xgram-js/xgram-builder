@@ -10,9 +10,24 @@ import { Project } from "./types";
 import exportMaps, { assertExportsToMap } from "./exportMaps";
 import chalk from "chalk";
 import { CommandDeclaration, CommandConfig } from "@xgram/core";
-const exec = promisify(execCb);
+import {
+    writeFile as fsWriteFileCb,
+    appendFile as fsAppendFileCb,
+    rm as fsRmCb,
+    readFile as fsReadFileCb
+} from "node:fs";
+import { fileURLToPath } from "node:url";
 
-interface RootTaskContext {
+const exec = promisify(execCb);
+const fsWriteFile = promisify(fsWriteFileCb);
+const fsAppendFile = promisify(fsAppendFileCb);
+const fsRm = promisify(fsRmCb);
+const fsReadFile = promisify(fsReadFileCb);
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export interface BuildProgressContext {
     project: Project;
     collectedDeclarations: {
         commands: CommandDeclaration[];
@@ -34,7 +49,7 @@ function generateRollupConfig(project: Project): RollupOptions {
         plugins: [
             typescriptPlugin({
                 noEmitOnError: true,
-                include: `**/*.ts`,
+                include: "**/*.ts",
                 tsconfig: path.join(project.rootDir, "tsconfig.json")
             }),
             terserPlugin({
@@ -45,9 +60,27 @@ function generateRollupConfig(project: Project): RollupOptions {
     };
 }
 
+function generateMergeRollupConfig(project: Project): RollupOptions {
+    return {
+        input: path.join(project.rootDir, ".xgram", "virtual-index.ts"),
+        output: {
+            format: "es",
+            file: path.join(project.rootDir, ".xgram", "index.js")
+        },
+        plugins: [
+            typescriptPlugin({
+                noEmitOnError: true,
+                include: ["**/*.ts", path.join(project.rootDir, ".xgram", "virtual-index.ts")],
+                tsconfig: path.join(project.rootDir, "tsconfig.json")
+            }),
+            terserPlugin()
+        ]
+    };
+}
+
 export async function buildProduction(cwd?: string) {
     cwd = cwd ?? process.cwd();
-    const rootTask = new Listr<RootTaskContext>(
+    const rootTask = new Listr<BuildProgressContext>(
         [
             {
                 title: "Mapping project structure",
@@ -81,11 +114,11 @@ export async function buildProduction(cwd?: string) {
             {
                 title: "Postprocessing bundle",
                 task: async (ctx, task) =>
-                    task.newListr<RootTaskContext>([
+                    task.newListr<BuildProgressContext>([
                         {
                             title: "Validating export maps",
                             task: async (ctx, task) =>
-                                task.newListr<RootTaskContext>(
+                                task.newListr<BuildProgressContext>(
                                     ctx.project.commands.map((command, i) => {
                                         return {
                                             title: command.projectRelativeFilePath,
@@ -99,7 +132,7 @@ export async function buildProduction(cwd?: string) {
                                                     command.projectRelativeFilePath
                                                 );
                                             }
-                                        } as ListrTask<RootTaskContext>;
+                                        } as ListrTask<BuildProgressContext>;
                                     }),
                                     {
                                         concurrent: true
@@ -127,6 +160,44 @@ export async function buildProduction(cwd?: string) {
                             }
                         }
                     ])
+            },
+            {
+                title: "Merging bundle",
+                task: async ctx => {
+                    const virtualIndexContent = [];
+                    for (let i = 0; i < ctx.project.commands.length; i++) {
+                        virtualIndexContent.push("// @ts-ignore", `import * as command${i} from "./dist/command-${i}"`);
+                    }
+                    const commandsComma = [];
+                    for (let i = 0; i < ctx.project.commands.length; i++) {
+                        commandsComma.push(`command${i}`);
+                    }
+
+                    virtualIndexContent.push("", `commands = [${commandsComma.join(", ")}]`);
+
+                    const virtualIndexPath = path.join(ctx.project.rootDir, ".xgram", "virtual-index.ts");
+                    await fsAppendFile(virtualIndexPath, "");
+                    await fsWriteFile(
+                        virtualIndexPath,
+                        (await fsReadFile(path.join(__dirname, "..", "skeleton", "virtual-index.ts")))
+                            .toString()
+                            .replace("/// @inject-here", virtualIndexContent.join("\n"))
+                    );
+
+                    const config = generateMergeRollupConfig(ctx.project);
+                    const bundle = await rollup(config);
+                    await bundle.write(<OutputOptions>config.output);
+                    await bundle.close();
+                }
+            },
+            {
+                title: "Cleaning up",
+                task: async ctx => {
+                    ["virtual-index.ts", "dist"].map(
+                        async v =>
+                            await fsRm(path.join(ctx.project.rootDir, ".xgram", v), { force: true, recursive: true })
+                    );
+                }
             }
         ],
         {
