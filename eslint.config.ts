@@ -21,7 +21,7 @@ export default defineConfig([
             "no-empty-function": "off",
             "@typescript-eslint/no-empty-function": "off",
             "@typescript-eslint/no-namespace": "off",
-            "no-undef": "warn"
+            "no-undef": "off"
         }
     },
     {
