@@ -36,7 +36,8 @@ function generateRollupConfig(project: Project): RollupOptions {
             terserPlugin({
                 keep_classnames: /^.*Error$/
             })
-        ]
+        ],
+        logLevel: "silent"
     };
 }
 
