@@ -173,7 +173,11 @@ export async function buildProduction(cwd?: string) {
                         commandsComma.push(`command${i}`);
                     }
 
-                    virtualIndexContent.push("", `commands = [${commandsComma.join(", ")}]`);
+                    virtualIndexContent.push(
+                        "",
+                        `const commandsMap: string[] = ${JSON.stringify(ctx.project.commands.map(v => v.name))}`,
+                        `commands = [${commandsComma.join(", ")}].map((v, i) => {return {handlerFunction: v.default, trigger: commandsMap[i], prefix: v.commandConfig.prefix ?? "/"}})`
+                    );
 
                     const virtualIndexPath = path.join(ctx.project.rootDir, ".xgram", "virtual-index.ts");
                     await fsAppendFile(virtualIndexPath, "");

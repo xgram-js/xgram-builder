@@ -1,9 +1,13 @@
-import { Bot, CommandConfig } from "@xgram/core";
-let commands: CommandConfig[] = [];
+import { Bot, CommandDeclaration } from "@xgram/core";
+import { configDotenv } from "dotenv";
+import assert from "node:assert";
+let commands: CommandDeclaration[] = [];
 /// @inject-here
 
 async function main() {
-    const bot = new Bot(commands[0].prefix ?? "/");
+    configDotenv({ quiet: true });
+    assert(process.env.TOKEN, "Bot token was not found in .env");
+    const bot = new Bot(process.env.TOKEN);
 }
 
 void main();
