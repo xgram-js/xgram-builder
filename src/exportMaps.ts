@@ -1,11 +1,12 @@
 import { PrimitiveTypeLiteral } from "./types";
 import assert from "node:assert";
-import { InvalidProjectStructureError } from "./mapper";
-import chalk from "chalk";
+import { ProjectStructureExportTypeMismatchError } from "./mapper";
+import * as z from "zod";
 
 export type ExportMapDeclaration = {
     type: PrimitiveTypeLiteral;
     required: boolean;
+    zodSchema?: z.ZodType;
 };
 export type ExportMaps = Record<string, ExportMapDeclaration>;
 
@@ -17,21 +18,38 @@ export default {
         },
         commandConfig: {
             type: "object",
-            required: false
+            required: false,
+            zodSchema: z.strictObject({
+                prefix: z.string().min(1).optional()
+            })
         }
     }
 } as Record<string, ExportMaps>;
 
 export function assertExportsToMap(map: ExportMaps, exports: any, file: string) {
     Object.keys(map).forEach(key => {
-        if (!map[key].required && typeof exports[key] === "undefined") return;
+        const mapDeclaration = map[key];
+        const exportValue = exports[key];
+
+        if (!mapDeclaration.required && typeof exportValue === "undefined") return;
         assert(
-            typeof exports[key] == map[key].type,
-            new InvalidProjectStructureError(
+            typeof exportValue == mapDeclaration.type,
+            new ProjectStructureExportTypeMismatchError(
                 file,
-                `to contain ${map[key].required ? "" : chalk.yellow("optional ")}export key ${chalk.green(key)} with type ${chalk.green(map[key].type)}`,
-                typeof exports[key] == "undefined" ? null : typeof exports[key]
+                key,
+                mapDeclaration.type,
+                typeof exportValue === "undefined" ? undefined : typeof exportValue,
+                mapDeclaration.required
             )
         );
+        if (mapDeclaration.zodSchema) {
+            try {
+                mapDeclaration.zodSchema.parse(exportValue);
+            } catch (e) {
+                if (e instanceof z.ZodError) {
+                    throw new ProjectStructureExportTypeMismatchError(file, key, e);
+                }
+            }
+        }
     });
 }

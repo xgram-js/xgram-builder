@@ -1,25 +1,47 @@
 import { readdirSync } from "node:fs";
 import chalk from "chalk";
 import path from "node:path";
-import { Project, ProjectCommand } from "./types";
+import { PrimitiveTypeLiteral, Project, ProjectCommand } from "./types";
+import { prettifyError, ZodError } from "zod";
 
 export class InvalidProjectStructureError extends Error {
-    // TODO: replace overloads with `type: ErrorTypeEnum` argument
+    public constructor(message: string, options?: ErrorOptions) {
+        super(message, options);
+    }
+}
 
-    public constructor(expected: string, found?: string);
-    public constructor(file: string, expected: string, found: string | null);
+export class ProjectStructurePathNotFoundError extends InvalidProjectStructureError {
+    public constructor(expectedPath: string) {
+        super(`Expected path ${chalk.green(expectedPath)} was not found`);
+    }
+}
 
-    public constructor(a: string, b: string, c?: string | null) {
-        if (a && !b && !c) {
-            super(`Expected ${chalk.green(a)}, but nothing found`);
-        } else if (a && b && c === undefined) {
-            super(`Expected ${chalk.green(a)}, but found ${chalk.red(b)}`);
+export class ProjectStructureExportTypeMismatchError extends InvalidProjectStructureError {
+    public constructor(
+        file: string,
+        expectedKey: string,
+        expectedType: PrimitiveTypeLiteral,
+        foundType?: PrimitiveTypeLiteral,
+        required?: boolean
+    );
+    public constructor(file: string, exportKey: string, schemaValidationError: ZodError);
+
+    public constructor(
+        file: string,
+        expectedKey: string,
+        expectedTypeOrZodError: PrimitiveTypeLiteral | ZodError,
+        foundType?: PrimitiveTypeLiteral,
+        required: boolean = true
+    ) {
+        if (typeof expectedTypeOrZodError === "string") {
+            super(
+                `File ${chalk.gray(file)} expected to contain an ${required ? "" : chalk.yellow("optional ")}export key ${chalk.green(expectedKey)} with type ${chalk.green(expectedTypeOrZodError)}, but ${foundType ? `${chalk.red(foundType)} was found` : "it was not found"}`
+            );
         } else {
-            if (c == null) {
-                super(`File ${a} expected ${b}, but nothing found`);
-            } else {
-                super(`File ${a} expected ${b}, but found ${chalk.red(c)}`);
-            }
+            // TODO: implement custom prettifyError function
+            super(
+                `File ${chalk.gray(file)} contains an invalid export value for the ${chalk.green(expectedKey)} key. Validation errors:\n${prettifyError(expectedTypeOrZodError)}`
+            );
         }
     }
 }
@@ -35,7 +57,7 @@ function handleCommandsDir(commandsDir: string): ProjectCommand[] {
 
 export default function mapProjectStructure(rootDir: string) {
     const rootDirList = readdirSync(rootDir);
-    if (!rootDirList.includes("src")) throw new InvalidProjectStructureError("/src");
+    if (!rootDirList.includes("src")) throw new ProjectStructurePathNotFoundError("/src");
     const srcDirPath = path.join(rootDir, "src");
     const srcDirList = readdirSync(srcDirPath);
 
@@ -44,7 +66,7 @@ export default function mapProjectStructure(rootDir: string) {
     } as Project;
 
     for (const subDir of ["commands", "events", "menus", "services"]) {
-        if (!srcDirList.includes(subDir)) throw new InvalidProjectStructureError(`/src/${subDir}`);
+        if (!srcDirList.includes(subDir)) throw new ProjectStructurePathNotFoundError(`/src/${subDir}`);
         switch (subDir) {
             case "commands":
                 project.commands = handleCommandsDir(path.join(srcDirPath, subDir));
