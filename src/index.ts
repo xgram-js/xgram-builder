@@ -1,5 +1,5 @@
 import mapProjectStructure from "./mapper";
-import { Listr, ListrDefaultRendererLogLevels, ListrLogger } from "listr2";
+import { Listr, ListrDefaultRendererLogLevels, Spinner } from "listr2";
 import { exec as execCb, ExecException } from "node:child_process";
 import { promisify } from "node:util";
 import chalk from "chalk";
@@ -11,7 +11,9 @@ import { Project } from "./types";
 
 const exec = promisify(execCb);
 
-class CustomLogger extends ListrLogger {}
+class ForceUnicodeSpinner extends Spinner {
+    protected override readonly spinner: string[] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+}
 
 interface RootTaskContext {
     project: Project;
@@ -83,11 +85,11 @@ export async function buildProduction(cwd?: string) {
         ],
         {
             rendererOptions: {
-                logger: new CustomLogger(),
                 icon: {
                     [ListrDefaultRendererLogLevels.COMPLETED]: "V",
                     [ListrDefaultRendererLogLevels.FAILED]: "X"
-                }
+                },
+                spinner: new ForceUnicodeSpinner()
             }
         }
     );
