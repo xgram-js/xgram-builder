@@ -173,35 +173,42 @@ export async function buildProduction(cwd?: string) {
                                     });
                                 }
                             }
+                        },
+                        {
+                            title: "Preparing for merge",
+                            task: async ctx => {
+                                const virtualIndexContent = [];
+                                for (let i = 0; i < ctx.project.commands.length; i++) {
+                                    virtualIndexContent.push(
+                                        "// @ts-ignore",
+                                        `import command${i} from "./dist/command-${i}"`
+                                    );
+                                }
+
+                                const commandDeclarationsLines: string[] = [];
+                                ctx.collectedDeclarations.commands.forEach((command, index) => {
+                                    commandDeclarationsLines.push(
+                                        `{handlerFunction: command${index}, trigger: '${command.trigger}', prefix: '${command.prefix}'},`
+                                    );
+                                });
+
+                                virtualIndexContent.push("", "commands = [", commandDeclarationsLines.join("\n"), "]");
+
+                                const virtualIndexPath = path.join(ctx.project.rootDir, ".xgram", "virtual-index.ts");
+                                await fsAppendFile(virtualIndexPath, "");
+                                await fsWriteFile(
+                                    virtualIndexPath,
+                                    (await fsReadFile(path.join(__dirname, "..", "skeleton", "virtual-index.ts")))
+                                        .toString()
+                                        .replace("/// @inject-here", virtualIndexContent.join("\n"))
+                                );
+                            }
                         }
                     ])
             },
             {
                 title: "Merging bundle",
                 task: async ctx => {
-                    const virtualIndexContent = [];
-                    for (let i = 0; i < ctx.project.commands.length; i++) {
-                        virtualIndexContent.push("// @ts-ignore", `import command${i} from "./dist/command-${i}"`);
-                    }
-
-                    const commandDeclarationsLines: string[] = [];
-                    ctx.collectedDeclarations.commands.forEach((command, index) => {
-                        commandDeclarationsLines.push(
-                            `{handlerFunction: command${index}, trigger: '${command.trigger}', prefix: '${command.prefix}'},`
-                        );
-                    });
-
-                    virtualIndexContent.push("", "commands = [", commandDeclarationsLines.join("\n"), "]");
-
-                    const virtualIndexPath = path.join(ctx.project.rootDir, ".xgram", "virtual-index.ts");
-                    await fsAppendFile(virtualIndexPath, "");
-                    await fsWriteFile(
-                        virtualIndexPath,
-                        (await fsReadFile(path.join(__dirname, "..", "skeleton", "virtual-index.ts")))
-                            .toString()
-                            .replace("/// @inject-here", virtualIndexContent.join("\n"))
-                    );
-
                     const config = generateMergeRollupConfig(ctx.project);
                     const bundle = await rollup(config);
                     await bundle.write(<OutputOptions>config.output);
