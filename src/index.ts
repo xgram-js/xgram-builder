@@ -74,7 +74,8 @@ function generateMergeRollupConfig(project: Project): RollupOptions {
                 tsconfig: path.join(project.rootDir, "tsconfig.json")
             }),
             terserPlugin()
-        ]
+        ],
+        logLevel: "silent"
     };
 }
 
@@ -206,6 +207,8 @@ export async function buildProduction(cwd?: string) {
         ],
         {
             rendererOptions: {
+                collapseSubtasks: false,
+                collapseErrors: false,
                 icon: {
                     [ListrDefaultRendererLogLevels.COMPLETED]: "V",
                     [ListrDefaultRendererLogLevels.FAILED]: "X"
