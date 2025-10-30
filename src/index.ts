@@ -29,15 +29,29 @@ const __dirname = path.dirname(__filename);
 
 export interface BuildProgressContext {
     project: Project;
+    bundleMap: {
+        commands: Record<string, { filePath: string }>;
+    };
     collectedDeclarations: {
         commands: CommandDeclaration[];
     };
 }
 
-function generateRollupConfig(project: Project): RollupOptions {
+function generateRollupConfig(ctx: BuildProgressContext): RollupOptions {
+    const project = ctx.project;
+    ctx.bundleMap = {
+        commands: {}
+    };
     return {
         input: {
-            ...Object.fromEntries(project.commands.map((v, i) => [`command-${i}`, v.filePath])),
+            ...Object.fromEntries(
+                project.commands.map((v, i) => {
+                    ctx.bundleMap.commands[v.name] = {
+                        filePath: path.join(project.rootDir, ".xgram", "dist", `command-${i}.js`)
+                    };
+                    return [`command-${i}`, v.filePath];
+                })
+            ),
             ...Object.fromEntries(project.events.map((v, i) => [`event-${i}`, v])),
             ...Object.fromEntries(project.menus.map((v, i) => [`menu-${i}`, v])),
             ...Object.fromEntries(project.services.map((v, i) => [`service-${i}`, v]))
@@ -106,7 +120,9 @@ export async function buildProduction(cwd?: string) {
             {
                 title: "Bundling TypeScript",
                 task: async ctx => {
-                    const config = generateRollupConfig(ctx.project);
+                    await fsRm(path.join(ctx.project.rootDir, ".xgram"), { recursive: true, force: true });
+
+                    const config = generateRollupConfig(ctx);
                     const bundle = await rollup(config);
                     await bundle.write(<OutputOptions>config.output);
                     await bundle.close();
@@ -120,6 +136,7 @@ export async function buildProduction(cwd?: string) {
                             title: "Validating export maps",
                             task: async (ctx, task) =>
                                 task.newListr<BuildProgressContext>(
+                                    // TODO: use bundle map instead
                                     ctx.project.commands.map((command, i) => {
                                         return {
                                             title: command.projectRelativeFilePath,
@@ -146,16 +163,13 @@ export async function buildProduction(cwd?: string) {
                                 ctx.collectedDeclarations = {
                                     commands: []
                                 };
-                                for (let i = 0; i < ctx.project.commands.length; i++) {
-                                    const command = ctx.project.commands[i];
-                                    const commandFileExports = await import(
-                                        `file://${path.join(ctx.project.rootDir, ".xgram", "dist", `command-${i}.js`)}`
-                                    );
-                                    const config: CommandConfig = commandFileExports.commandConfig ?? {};
+                                for (const [name, { filePath }] of Object.entries(ctx.bundleMap.commands)) {
+                                    const exports = await import(`file://${filePath}`);
+                                    const config: CommandConfig | undefined = exports.commandConfig;
                                     ctx.collectedDeclarations.commands.push({
-                                        trigger: command.name,
-                                        prefix: config.prefix ?? "/",
-                                        handlerFunction: commandFileExports.default
+                                        handlerFunction: exports.default,
+                                        trigger: name,
+                                        prefix: config?.prefix ?? "/"
                                     });
                                 }
                             }
