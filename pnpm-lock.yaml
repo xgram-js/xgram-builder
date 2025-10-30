@@ -4,6 +4,9 @@ settings:
     autoInstallPeers: true
     excludeLinksFromLockfile: false
 
+overrides:
+    "@eslint/core": 0.16.0
+
 importers:
     .:
         dependencies:
