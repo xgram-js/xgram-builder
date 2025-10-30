@@ -181,18 +181,17 @@ export async function buildProduction(cwd?: string) {
                 task: async ctx => {
                     const virtualIndexContent = [];
                     for (let i = 0; i < ctx.project.commands.length; i++) {
-                        virtualIndexContent.push("// @ts-ignore", `import * as command${i} from "./dist/command-${i}"`);
-                    }
-                    const commandsComma = [];
-                    for (let i = 0; i < ctx.project.commands.length; i++) {
-                        commandsComma.push(`command${i}`);
+                        virtualIndexContent.push("// @ts-ignore", `import command${i} from "./dist/command-${i}"`);
                     }
 
-                    virtualIndexContent.push(
-                        "",
-                        `const commandsMap: string[] = ${JSON.stringify(ctx.project.commands.map(v => v.name))}`,
-                        `commands = [${commandsComma.join(", ")}].map((v, i) => {return {handlerFunction: v.default, trigger: commandsMap[i], prefix: v.commandConfig.prefix ?? "/"}})`
-                    );
+                    const commandDeclarationsLines: string[] = [];
+                    ctx.collectedDeclarations.commands.forEach((command, index) => {
+                        commandDeclarationsLines.push(
+                            `{handlerFunction: command${index}, trigger: '${command.trigger}', prefix: '${command.prefix}'},`
+                        );
+                    });
+
+                    virtualIndexContent.push("", "commands = [", commandDeclarationsLines.join("\n"), "]");
 
                     const virtualIndexPath = path.join(ctx.project.rootDir, ".xgram", "virtual-index.ts");
                     await fsAppendFile(virtualIndexPath, "");
