@@ -19,7 +19,15 @@ export default [
                 noEmitOnError: true
             }),
             terserPlugin({
-                keep_classnames: /^.*Error$/
+                keep_classnames: /^.*Error$/,
+                compress: {
+                    booleans_as_integers: true,
+                    arguments: true,
+                    ecma: 2020,
+                    hoist_funs: true,
+                    module: true,
+                    passes: 3
+                }
             })
         ]
     },
