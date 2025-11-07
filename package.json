@@ -2,7 +2,7 @@
   "name": "@xgram/builder",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.15.0",
+  "packageManager": "pnpm@10.20.0",
   "scripts": {
     "format": "prettier . --write",
     "lint": "eslint . --fix",
