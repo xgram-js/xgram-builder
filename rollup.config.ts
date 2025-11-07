@@ -21,7 +21,7 @@ export default [
             terserPlugin({
                 keep_classnames: /^.*Error$/,
                 compress: {
-                    booleans_as_integers: true,
+                    // booleans_as_integers: true, do not enable
                     arguments: true,
                     ecma: 2020,
                     hoist_funs: true,
