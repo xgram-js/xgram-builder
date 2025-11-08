@@ -1,5 +1,5 @@
 import mapProjectStructure from "./mapper";
-import { Listr, ListrDefaultRendererLogLevels, ListrTask } from "listr2";
+import { Listr, ListrDefaultRendererLogLevels, ListrTask, PRESET_TIMER } from "listr2";
 import { exec as execCb, ExecException } from "node:child_process";
 import { promisify } from "node:util";
 import { OutputOptions, rollup, RollupOptions } from "rollup";
@@ -232,7 +232,8 @@ export async function buildProduction(cwd?: string) {
                 icon: {
                     [ListrDefaultRendererLogLevels.COMPLETED]: "V",
                     [ListrDefaultRendererLogLevels.FAILED]: "X"
-                }
+                },
+                timer: PRESET_TIMER
             },
             forceUnicode: true
         }
