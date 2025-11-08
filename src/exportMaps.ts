@@ -29,7 +29,7 @@ export default {
     service: {}
 } as Record<"command" | "event" | "menu" | "service", ExportMaps>;
 
-export function assertExportsToMap(map: ExportMaps, exports: any, file: string) {
+export function assertExportsToMap(map: ExportMaps, exports: Record<string, unknown>, file: string) {
     Object.keys(map).forEach(key => {
         const mapDeclaration = map[key];
         const exportValue = exports[key];

@@ -1,6 +1,7 @@
 import { Bot, CommandDeclaration } from "@xgram/core";
 import { configDotenv } from "dotenv";
 import assert from "node:assert";
+
 let commands: CommandDeclaration[] = [];
 /// @inject-here
 
