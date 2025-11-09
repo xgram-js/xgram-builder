@@ -3,24 +3,17 @@ import { Listr, ListrDefaultRendererLogLevels, ListrTask, PRESET_TIMER } from "l
 import { exec as execCb, ExecException } from "node:child_process";
 import { promisify } from "node:util";
 import { OutputOptions, rollup, RollupOptions } from "rollup";
-import typescriptPlugin from "@rollup/plugin-typescript";
 import terserPlugin from "@rollup/plugin-terser";
 import path from "node:path";
 import { Project } from "./types";
 import exportMaps, { assertExportsToMap } from "./exportMaps";
 import chalk from "chalk";
 import { CommandDeclaration, CommandConfig } from "@xgram/core";
-import {
-    writeFile as fsWriteFileCb,
-    appendFile as fsAppendFileCb,
-    rm as fsRmCb,
-    readFile as fsReadFileCb
-} from "node:fs";
+import { writeFile as fsWriteFileCb, rm as fsRmCb, readFile as fsReadFileCb } from "node:fs";
 import { fileURLToPath } from "node:url";
-
+import esbuildPlugin from "rollup-plugin-esbuild";
 const exec = promisify(execCb);
 const fsWriteFile = promisify(fsWriteFileCb);
-const fsAppendFile = promisify(fsAppendFileCb);
 const fsRm = promisify(fsRmCb);
 const fsReadFile = promisify(fsReadFileCb);
 
@@ -61,10 +54,8 @@ function generateRollupConfig(ctx: BuildProgressContext): RollupOptions {
             dir: path.join(project.rootDir, ".xgram", "dist")
         },
         plugins: [
-            typescriptPlugin({
-                noEmitOnError: true,
-                include: "**/*.ts",
-                tsconfig: path.join(project.rootDir, "tsconfig.json")
+            esbuildPlugin({
+                include: path.join(ctx.project.rootDir, "src", "**", "*.ts")
             }),
             terserPlugin({
                 keep_classnames: /^.*Error$/
@@ -82,10 +73,9 @@ function generateMergeRollupConfig(project: Project): RollupOptions {
             file: path.join(project.rootDir, ".xgram", "index.js")
         },
         plugins: [
-            typescriptPlugin({
-                noEmitOnError: true,
-                include: ["**/*.ts", path.join(project.rootDir, ".xgram", "virtual-index.ts")],
-                tsconfig: path.join(project.rootDir, "tsconfig.json")
+            esbuildPlugin({
+                include: path.join(project.rootDir, ".xgram", "virtual-index.ts"),
+                minify: false
             }),
             terserPlugin()
         ],
@@ -178,7 +168,7 @@ export async function buildProduction(cwd?: string) {
                             title: "Preparing for merge",
                             task: async ctx => {
                                 const virtualIndexContent = [];
-                                for (let i = 0; i < ctx.project.commands.length; i++) {
+                                for (let i = 0; i < ctx.collectedDeclarations.commands.length; i++) {
                                     virtualIndexContent.push(
                                         "// @ts-ignore",
                                         `import command${i} from "./dist/command-${i}"`
@@ -195,7 +185,6 @@ export async function buildProduction(cwd?: string) {
                                 virtualIndexContent.push("", "commands = [", commandDeclarationsLines.join("\n"), "]");
 
                                 const virtualIndexPath = path.join(ctx.project.rootDir, ".xgram", "virtual-index.ts");
-                                await fsAppendFile(virtualIndexPath, "");
                                 await fsWriteFile(
                                     virtualIndexPath,
                                     (await fsReadFile(path.join(__dirname, "..", "skeleton", "virtual-index.ts")))
