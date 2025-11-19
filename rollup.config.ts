@@ -1,5 +1,5 @@
-import typescriptPlugin, { RollupTypescriptOptions } from "@rollup/plugin-typescript";
 import terserPlugin from "@rollup/plugin-terser";
+import typescriptPlugin, { RollupTypescriptOptions } from "@rollup/plugin-typescript";
 import { RollupOptions } from "rollup";
 import { dts as dtsPlugin } from "rollup-plugin-dts";
 import dtsMinifyPlugin from "rollup-plugin-dts-minify";

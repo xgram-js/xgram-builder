@@ -1,8 +1,10 @@
-import { readdirSync } from "node:fs";
 import chalk from "chalk";
+import { ZodError, prettifyError } from "zod";
+
+import { readdirSync } from "node:fs";
 import path from "node:path";
+
 import { PrimitiveTypeLiteral, Project, ProjectCommand } from "./types";
-import { prettifyError, ZodError } from "zod";
 
 export class InvalidProjectStructureError extends Error {
     public constructor(message: string, options?: ErrorOptions) {

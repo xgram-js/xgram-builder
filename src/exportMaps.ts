@@ -1,7 +1,9 @@
-import { PrimitiveTypeLiteral } from "./types";
-import assert from "node:assert";
-import { ProjectStructureExportTypeMismatchError } from "./mapper";
 import * as z from "zod";
+
+import assert from "node:assert";
+
+import { ProjectStructureExportTypeMismatchError } from "./mapper";
+import { PrimitiveTypeLiteral } from "./types";
 
 export type ExportMapDeclaration = {
     type: PrimitiveTypeLiteral;

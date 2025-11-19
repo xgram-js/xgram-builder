@@ -1,7 +1,7 @@
 import js from "@eslint/js";
-import tseslint from "typescript-eslint";
 import markdown from "@eslint/markdown";
 import { defineConfig } from "eslint/config";
+import tseslint from "typescript-eslint";
 
 export default defineConfig([
     {
