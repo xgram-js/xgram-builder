@@ -1,6 +1,9 @@
 {
   "trailingComma": "none",
   "arrowParens": "avoid",
-  "plugins": ["@trivago/prettier-plugin-sort-imports", "prettier-plugin-unused-imports-configurable"],
-  "importOrderParserPlugins": ["typescript", "decorators-legacy"]
+  "plugins": ["prettier-plugin-unused-imports-configurable", "@trivago/prettier-plugin-sort-imports"],
+  "importOrderParserPlugins": ["typescript", "decorators-legacy"],
+  "importOrder": ["<THIRD_PARTY_MODULES>", "<BUILTIN_MODULES>", "^[./]"],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true
 }
